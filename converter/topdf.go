@@ -1,10 +1,10 @@
-package main
+package converter
 
 import (
 	"os/exec"
 )
 
-func convtopdf(src, dst string) error {
+func Convtopdf(src, dst string) error {
 	cmd := exec.Command("pandoc", src, "-o", dst)
 	err := cmd.Run()
 	if err != nil {

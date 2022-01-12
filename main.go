@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 	"os"
+
+	"github.com/rs401/topdf/converter"
 )
 
 func convertFile(w http.ResponseWriter, r *http.Request) {
@@ -20,18 +22,29 @@ func convertFile(w http.ResponseWriter, r *http.Request) {
 	defer file.Close()
 	log.Printf("Uploaded File: %+v\n", header.Filename)
 	log.Printf("File Size: %+v\n", header.Size)
-	log.Printf("MIME Header: %+v\n", header.Header)
+	log.Printf("MIME Header: %+v\n\n", header.Header)
 
-	f, err := os.OpenFile("./downloaded", os.O_WRONLY|os.O_CREATE, 0666)
+	input, err := os.CreateTemp("./", "input")
 	if err != nil {
-		log.Println("Error Creating the Temp File")
+		log.Println("Error Creating the Temp Input File")
 		log.Println(err)
 		return
 	}
-	defer f.Close()
-	io.Copy(f, file)
+	defer input.Close()
+	io.Copy(input, file)
+	defer os.Remove(input.Name())
 
-	err = convtopdf(f.Name(), "./out.pdf")
+	// output
+	output, err := os.CreateTemp("./", "output-*.pdf")
+	if err != nil {
+		log.Println("Error Creating the Temp Output File")
+		log.Println(err)
+		return
+	}
+	defer output.Close()
+	defer os.Remove(output.Name())
+
+	err = converter.Convtopdf(input.Name(), output.Name())
 	if err != nil {
 		log.Println("Error Creating PDF File")
 		log.Printf("Error: %s\n", err.Error())
@@ -39,9 +52,9 @@ func convertFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := os.Open("./out.pdf")
+	out, err := os.Open(output.Name())
 	if err != nil {
-		log.Println("Error Creating PDF File")
+		log.Println("Error Opening PDF File for transfer.")
 		log.Println(err)
 		fmt.Fprintf(w, "Error: %s\n", err.Error())
 		return
@@ -51,11 +64,13 @@ func convertFile(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Successfully Converted File\n")
 }
 
-func setupRoutes() error {
-	http.HandleFunc("/topdf", convertFile)
-	return http.ListenAndServe(":8888", nil)
-}
+// func setupRoutes() error {
+// 	http.HandleFunc("/topdf", convertFile)
+// 	return http.ListenAndServe(":8888", nil)
+// }
 
 func main() {
-	log.Fatal(setupRoutes())
+	http.HandleFunc("/topdf", convertFile)
+	err := http.ListenAndServe(":8888", nil)
+	log.Fatal(err)
 }
