@@ -9,9 +9,11 @@ FROM pandoc/core:latest
 # This brings it from 194MB to 817 MB
 # RUN apk --no-cache add texlive
 # Guess I'll have to look into tinytex
+# TinyTeX sits at 411 MB
 RUN apk --no-cache add perl wget
 RUN wget -qO- "https://yihui.org/tinytex/install-bin-unix.sh" | sh
 ENV PATH=/root/.TinyTeX/bin/x86_64-linuxmusl/:$PATH
+ENV PORT=8888
 WORKDIR /app/
 COPY --from=0 /build/app ./
 EXPOSE 8888

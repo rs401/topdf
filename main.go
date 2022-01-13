@@ -7,8 +7,19 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/gorilla/mux"
 	"github.com/rs401/topdf/converter"
 )
+
+var PORT string
+
+func init() {
+	PORT = config("PORT")
+}
+
+func config(key string) string {
+	return os.Getenv(key)
+}
 
 func convertFile(w http.ResponseWriter, r *http.Request) {
 	// 10MB
@@ -64,13 +75,17 @@ func convertFile(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Successfully Converted File\n")
 }
 
-// func setupRoutes() error {
-// 	http.HandleFunc("/topdf", convertFile)
-// 	return http.ListenAndServe(":8888", nil)
-// }
+func setupRoutes() (*mux.Router, error) {
+	r := mux.NewRouter()
+	r.HandleFunc("/topdf", convertFile).Methods("POST")
+	return r, nil
+}
 
 func main() {
-	http.HandleFunc("/topdf", convertFile)
-	err := http.ListenAndServe(":8888", nil)
-	log.Fatal(err)
+	router, err := setupRoutes()
+	if err != nil {
+		log.Fatal(err)
+	}
+	log.Printf("Listening on port: %s...\n", PORT)
+	log.Fatal(http.ListenAndServe(":"+PORT, router))
 }

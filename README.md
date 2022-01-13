@@ -110,7 +110,7 @@ Build main, build the docker image or pull the image when I upload it.
 
 ### Prerequisites
 
-Go(lang) to build a binary or Docker to build the docker image.
+Go(lang) to build a binary or Docker to build the docker image. If building the go binary, you will also need Pandoc installed with pdflatex.
 
 ### Installation
 
@@ -121,6 +121,7 @@ Go(lang) to build a binary or Docker to build the docker image.
 2. Build binary
    ```sh
    go build .
+   PORT=8888 ./topdf
    ```
 
 OR
@@ -129,6 +130,13 @@ OR
 2. Build the Docker image
    ```sh
    docker build -t rs401/topdf:1.0 .
+   docker run --rm -d -p 8888:8888 --name topdf rs401/topdf:1.0
+   ```
+
+   OR, if you would like to change the API port.
+
+   ```sh
+   docker run --rm -d -e PORT=9999 --expose 9999 -p 9999:9999 --name topdf rs401/topdf:1.0
    ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
@@ -149,8 +157,8 @@ curl --request POST http://127.0.0.1:8888/topdf -F file=@main.go --output out.pd
 <!-- ROADMAP -->
 ## Roadmap
 
-- [] Parameterize the listening port
-- [] Load config from env file
+- [x] Parameterize the listening port
+- [x] Load config from env file
 
 See the [open issues](https://github.com/rs401/topdf/issues) for a full list of proposed features (and known issues).
 
