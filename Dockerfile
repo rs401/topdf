@@ -5,14 +5,10 @@ RUN go mod download
 COPY . .
 RUN CGO_ENABLED=0 GOOS=linux go build -a -o app .
 
-FROM pandoc/core:latest
-# This brings it from 194MB to 817 MB
-# RUN apk --no-cache add texlive
-# Guess I'll have to look into tinytex
-# TinyTeX sits at 411 MB
-RUN apk --no-cache add perl wget
-RUN wget -qO- "https://yihui.org/tinytex/install-bin-unix.sh" | sh
-ENV PATH=/root/.TinyTeX/bin/x86_64-linuxmusl/:$PATH
+FROM alpine:latest
+RUN apk update
+RUN apk --no-cache add libreoffice
+RUN apk --no-cache add font-misc-misc terminus-font ttf-inconsolata ttf-dejavu font-noto ttf-font-awesome font-noto-extra
 ENV PORT=8888
 WORKDIR /app/
 COPY --from=0 /build/app ./

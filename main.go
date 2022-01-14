@@ -82,25 +82,29 @@ func convertFile(w http.ResponseWriter, r *http.Request) {
 	defer os.Remove(input.Name())
 
 	// output
-	output, err := os.CreateTemp("./", "output-*.pdf")
-	if err != nil {
-		log.Println("Error Creating the Temp Output File")
-		log.Println(err)
-		fmt.Fprintln(w, "Error: Internal Server Error")
-		return
-	}
-	defer output.Close()
-	defer os.Remove(output.Name())
+	// output, err := os.CreateTemp("./", "output-*.pdf")
+	// if err != nil {
+	// 	log.Println("Error Creating the Temp Output File")
+	// 	log.Println(err)
+	// 	fmt.Fprintln(w, "Error: Internal Server Error")
+	// 	return
+	// }
+	// defer output.Close()
+	// defer os.Remove(output.Name())
 
-	err = converter.Convtopdf(input.Name(), output.Name())
+	// err = converter.Convtopdf(input.Name(), output.Name())
+	pdfFile, err := converter.Convtopdf(input.Name())
 	if err != nil {
 		log.Println("Error Creating PDF File")
 		log.Printf("Error: %s\n", err.Error())
-		fmt.Fprintln(w, "Error: Unable to convert file.\n")
+		fmt.Fprintln(w, "Error: Unable to convert file.")
 		return
 	}
+	// Need to open this and return it, and need to rewrite dockerfile to install libreoffice
+	fmt.Println(pdfFile)
 
-	out, err := os.Open(output.Name())
+	// out, err := os.Open(output.Name())
+	out, err := os.Open(pdfFile)
 	if err != nil {
 		log.Println("Error Opening PDF File for transfer.")
 		log.Println(err)
@@ -108,7 +112,9 @@ func convertFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	defer out.Close()
-	buffer := make([]byte, 10<<20)
+	defer os.Remove(out.Name())
+
+	buffer := make([]byte, 512)
 	out.Read(buffer)
 	contentType := http.DetectContentType(buffer)
 	stat, err := out.Stat()
