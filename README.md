@@ -111,7 +111,7 @@ To build main and run locally, you will need access to the Libreoffice lowriter 
 
 ### Prerequisites
 
-Go(lang) to build a binary or Docker to build the docker image. If building the go binary, you will also need Pandoc installed with pdflatex.
+Go(lang) to build a binary or Docker to build the docker image. If building the go binary, you will also need ~~Pandoc installed with pdflatex~~ Libreoffice installed and in your PATH.
 
 ### Installation
 
