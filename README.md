@@ -95,9 +95,10 @@ ToPDF offers an API endpoint that attempts to convert any file to PDF. A microse
 
 * [Go](https://go.dev/)
 * [Docker](https://www.docker.com/)
-* [Pandoc](https://pandoc.org/)
 * [Alpine](https://www.alpinelinux.org/)
-* [TinyTeX 👑](https://yihui.org/tinytex/)
+* [lowriter](https://www.libreoffice.org/)
+* ~~[Pandoc](https://pandoc.org/)~~
+* ~~[TinyTeX 👑](https://yihui.org/tinytex/)~~
 
 <p align="right">(<a href="#top">back to top</a>)</p>
 
@@ -106,7 +107,7 @@ ToPDF offers an API endpoint that attempts to convert any file to PDF. A microse
 <!-- GETTING STARTED -->
 ## Getting Started
 
-Build main, build the docker image or pull the image when I upload it.
+To build main and run locally, you will need access to the Libreoffice lowriter tool, this means Libreoffice will need to be installed and in your PATH. To build the docker image you will need Docker installed or you can pull the image when I upload it.
 
 ### Prerequisites
 
@@ -129,14 +130,14 @@ OR
 
 2. Build the Docker image
    ```sh
-   docker build -t rs401/topdf:1.0 .
-   docker run --rm -d -p 8888:8888 --name topdf rs401/topdf:1.0
+   docker build -t rs401/topdf:latest .
+   docker run --rm -d -p 8888:8888 --name topdf rs401/topdf:latest
    ```
 
    OR, if you would like to change the API port.
 
    ```sh
-   docker run --rm -d -e PORT=9999 --expose 9999 -p 9999:9999 --name topdf rs401/topdf:1.0
+   docker run --rm -d -e PORT=9999 --expose 9999 -p 9999:9999 --name topdf rs401/topdf:latest
    ```
 
 <p align="right">(<a href="#top">back to top</a>)</p>
