@@ -26,19 +26,18 @@ func Test_convtopdf(t *testing.T) {
 	defer os.Remove(output.Name())
 	type args struct {
 		src string
-		dst string
 	}
 	tests := []struct {
 		name    string
 		args    args
 		wantErr bool
 	}{
-		{"Test convtopdf", args{input.Name(), output.Name()}, false},
+		{"Test convtopdf", args{input.Name()}, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if err := Convtopdf(tt.args.src, tt.args.dst); (err != nil) != tt.wantErr {
-				t.Errorf("convtopdf() error = %v, wantErr %v", err.Error(), tt.wantErr)
+			if fname, err := Convtopdf(tt.args.src); (err != nil) != tt.wantErr {
+				t.Errorf("convtopdf() error = %v, wantErr %v, fname = %s", err.Error(), tt.wantErr, fname)
 			}
 		})
 	}
