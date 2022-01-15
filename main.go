@@ -13,7 +13,18 @@ import (
 	"github.com/rs401/topdf/converter"
 )
 
-var PORT string
+type MsgData struct {
+	Messages []string
+}
+
+type GetHandler struct {
+	Msgs MsgData
+}
+
+var (
+	PORT string
+	GH   *GetHandler
+)
 
 const form = `<!DOCTYPE html>
 <html lang="en">
@@ -35,28 +46,37 @@ const form = `<!DOCTYPE html>
             margin: .5em;
             width: 100%;
         }
+        ul {
+            list-style-type: none;
+        }
     </style>
 </head>
 <body>
     <div>
         <form action="/topdf" method="post" enctype="multipart/form-data">
-          <label for="file">Select file to convert:</label>
+            <label for="file">Select file to convert:</label>
             <input type="file" name="file" id="file">
             <input type="submit" value="Convert File" name="submit">
         </form>
-      </div>
+		<ul>
+			{{ range .Messages }}
+			<li>💥 {{.}} 🔥</li>
+			{{ end }}
+		</ul>
+    </div>
 </body>
 </html>`
 
 func init() {
 	PORT = config("PORT")
+	GH = &GetHandler{Msgs: MsgData{Messages: []string{}}}
 }
 
 func config(key string) string {
 	return os.Getenv(key)
 }
 
-func convertFile(w http.ResponseWriter, r *http.Request) {
+func (gh *GetHandler) convertFile(w http.ResponseWriter, r *http.Request) {
 	// 10MB
 	r.ParseMultipartForm(10 << 20)
 	file, header, err := r.FormFile("file")
@@ -70,6 +90,24 @@ func convertFile(w http.ResponseWriter, r *http.Request) {
 	log.Printf("File Size: %+v\n", header.Size)
 	log.Printf("MIME Header: %+v\n\n", header.Header)
 
+	if header.Size > (10 << 20) {
+		// Post notification about size
+		log.Println("File too large.")
+		GH.Msgs.Messages = append(GH.Msgs.Messages, "File too large. Must be less then 10MB.")
+		// http.Redirect(w, r, "/topdf", http.StatusTemporaryRedirect)
+		t, err := template.New("form").Parse(form)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusRequestEntityTooLarge)
+
+		if err := t.Execute(w, gh.Msgs); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+		return
+	}
+
 	input, err := os.CreateTemp("./", "input")
 	if err != nil {
 		log.Println("Error Creating the Temp Input File")
@@ -81,18 +119,6 @@ func convertFile(w http.ResponseWriter, r *http.Request) {
 	io.Copy(input, file)
 	defer os.Remove(input.Name())
 
-	// output
-	// output, err := os.CreateTemp("./", "output-*.pdf")
-	// if err != nil {
-	// 	log.Println("Error Creating the Temp Output File")
-	// 	log.Println(err)
-	// 	fmt.Fprintln(w, "Error: Internal Server Error")
-	// 	return
-	// }
-	// defer output.Close()
-	// defer os.Remove(output.Name())
-
-	// err = converter.Convtopdf(input.Name(), output.Name())
 	pdfFile, err := converter.Convtopdf(input.Name())
 	if err != nil {
 		log.Println("Error Creating PDF File")
@@ -100,10 +126,7 @@ func convertFile(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, "Error: Unable to convert file.")
 		return
 	}
-	// Need to open this and return it, and need to rewrite dockerfile to install libreoffice
-	fmt.Println(pdfFile)
 
-	// out, err := os.Open(output.Name())
 	out, err := os.Open(pdfFile)
 	if err != nil {
 		log.Println("Error Opening PDF File for transfer.")
@@ -132,22 +155,22 @@ func convertFile(w http.ResponseWriter, r *http.Request) {
 	log.Printf("Successfully Converted File\n\n")
 }
 
-func uploadFile(w http.ResponseWriter, r *http.Request) {
+func (gh *GetHandler) uploadFile(w http.ResponseWriter, r *http.Request) {
 	t, err := template.New("form").Parse(form)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	if err := t.Execute(w, nil); err != nil {
+	if err := t.Execute(w, gh.Msgs); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
 }
 
 func setupRoutes() (*mux.Router, error) {
 	r := mux.NewRouter()
-	r.HandleFunc("/topdf", convertFile).Methods("POST")
-	r.HandleFunc("/topdf", uploadFile).Methods("GET")
+	r.HandleFunc("/topdf", GH.convertFile).Methods("POST")
+	r.HandleFunc("/topdf", GH.uploadFile).Methods("GET")
 	return r, nil
 }
 
